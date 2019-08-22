@@ -34,6 +34,7 @@
 #ifdef CONFIG_ION_POOL_CACHE_POLICY
 #include <asm/cacheflush.h>
 #endif
+#include <linux/msm_dma_iommu_mapping.h>
 
 #include "ion.h"
 
@@ -86,6 +87,7 @@ struct ion_buffer {
 	struct sg_table *sg_table;
 	struct page **pages;
 	struct list_head vmas;
+	struct msm_iommu_data iommu_data;
 };
 void ion_buffer_destroy(struct ion_buffer *buffer);
 
