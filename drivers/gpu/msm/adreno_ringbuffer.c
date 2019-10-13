@@ -931,13 +931,13 @@ int adreno_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
 	}
 
 	/*
-	 * Add IB1 to read the GPU ticks at the start of the cmdbatch and
-	 * write it into the appropriate cmdbatch profiling buffer offset
+	 * Add IB1 to read the GPU ticks at the start of the drawobj and
+	 * write it into the appropriate command obj profiling buffer offset
 	 */
-	if (cmdbatch_user_profiling) {
+	if (user_profiling) {
 		cmds += set_user_profiling(adreno_dev, rb, cmds,
-			cmdbatch->profiling_buffer_gpuaddr +
-			offsetof(struct kgsl_cmdbatch_profiling_buffer,
+			cmdobj->profiling_buffer_gpuaddr +
+			offsetof(struct kgsl_drawobj_profiling_buffer,
 			gpu_ticks_submitted));
 	}
 
@@ -974,13 +974,13 @@ int adreno_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
 	}
 
 	/*
-	 * Add IB1 to read the GPU ticks at the end of the cmdbatch and
-	 * write it into the appropriate cmdbatch profiling buffer offset
+	 * Add IB1 to read the GPU ticks at the end of the drawobj and
+	 * write it into the appropriate command obj profiling buffer offset
 	 */
-	if (cmdbatch_user_profiling) {
+	if (user_profiling) {
 		cmds += set_user_profiling(adreno_dev, rb, cmds,
-			cmdbatch->profiling_buffer_gpuaddr +
-			offsetof(struct kgsl_cmdbatch_profiling_buffer,
+			cmdobj->profiling_buffer_gpuaddr +
+			offsetof(struct kgsl_drawobj_profiling_buffer,
 			gpu_ticks_retired));
 	}
 
