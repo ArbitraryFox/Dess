@@ -34,7 +34,6 @@
 #ifdef CONFIG_ION_POOL_CACHE_POLICY
 #include <asm/cacheflush.h>
 #endif
-#include <linux/msm_dma_iommu_mapping.h>
 
 #include "ion.h"
 
