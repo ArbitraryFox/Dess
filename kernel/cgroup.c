@@ -2435,7 +2435,7 @@ retry_find_task:
 	if (!ret && !threadgroup &&
 	    !strcmp(of->kn->parent->name, "top-app") &&
 	    task_is_zygote(tsk->parent))
-		cpu_input_boost_kick_max(500);
+		cpu_input_boost_kick_max(1000);
 
 	put_task_struct(tsk);
 out_unlock_cgroup:
