@@ -550,7 +550,6 @@ config QPNP_FG_GEN3
 	tristate "QPNP GEN3 fuel gauge driver"
 	depends on SPMI || MSM_SPMI
 	depends on OF_SPMI
-	depends on IIO
 	help
 	  Say Y here to enable the GEN3 Fuel Gauge driver. This adds support
 	  for battery fuel gauging and state of charge of battery connected to
@@ -647,27 +646,12 @@ config MSM_BCL_PERIPHERAL_CTL
 	  provides routines to configure and monitor the BCL
 	  PMIC peripheral.
 
-config MSM_BCL_SOMC_CTL
-	bool "BCL driver to control with new condition"
-	depends on BATTERY_BCL
-	help
-	  Say Y here to enable new condition.
-
 config FORCE_FAST_CHARGE
         bool "Force power draw from normal charger to be 2500mA"
         depends on QPNP_SMBCHARGER
         help
           Say Y here to enable normal charging to be run with 2500mA draw
           rather than the normal 1500mA-1800mA range.
-
-config QNS_SYSTEM
-	bool "Qnovo QNS wrapper implementation"
-	default n
-	help
-	  Say Y here to enable support for QNS system.
-	  QNS is a battery charging controller and it necessary to access a
-	  kernel driver for a battery charging.
-	  This adds sysfs interface which enables QNS daemon to access it.
 
 source "drivers/power/reset/Kconfig"
 
