@@ -74,7 +74,9 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 {
 	struct kgsl_drawobj_sync_event *event;
 	unsigned int i;
+#ifdef CONFIG_SYNC_DEBUG
 	unsigned long flags;
+#endif
 
 	for (i = 0; i < syncobj->numsyncs; i++) {
 		event = &syncobj->synclist[i];
@@ -97,6 +99,7 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 			break;
 		}
 		case KGSL_CMD_SYNCPOINT_TYPE_FENCE:
+#ifdef CONFIG_SYNC_DEBUG
 			spin_lock_irqsave(&event->handle_lock, flags);
 
 			if (event->handle)
@@ -107,6 +110,7 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 				dev_err(device->dev, "  fence: invalid\n");
 
 			spin_unlock_irqrestore(&event->handle_lock, flags);
+#endif
 			break;
 		}
 	}
@@ -151,9 +155,11 @@ static void syncobj_timer(unsigned long data)
 			spin_lock_irqsave(&event->handle_lock, flags);
 
 			if (event->handle != NULL) {
+#ifdef CONFIG_SYNC_DEBUG
 				dev_err(device->dev, "       [%d] FENCE %s\n",
 				i, event->handle->fence ?
 					event->handle->fence->name : "NULL");
+#endif
 				kgsl_sync_fence_log(event->handle->fence);
 			}
 
@@ -180,7 +186,7 @@ static bool drawobj_sync_expire(struct kgsl_device *device,
 	 * Clear the event from the pending mask - if it is already clear, then
 	 * leave without doing anything useful
 	 */
-	if (!test_and_clear_bit(event->id, &event->syncobj->pending))
+	if (!test_and_clear_bit(event->id, &syncobj->pending))
 		return false;
 
 	/*
@@ -217,7 +223,7 @@ static void drawobj_sync_func(struct kgsl_device *device,
 	if (drawobj_sync_expire(device, event))
 		kgsl_context_put(event->context);
 
-	drawobj_put(event->drawobj);
+	drawobj_put(&event->syncobj->base);
 }
 
 static inline void memobj_list_free(struct list_head *list)
@@ -251,7 +257,7 @@ static void drawobj_destroy_sync(struct kgsl_drawobj *drawobj)
 		 * If this thread clears the pending bit mask then it is
 		 * responsible for doing context put.
 		 */
-		if (!test_and_clear_bit(i, &cmdbatch->pending))
+		if (!test_and_clear_bit(i, &syncobj->pending))
 			continue;
 
 		switch (event->type) {
@@ -285,7 +291,7 @@ static void drawobj_destroy_sync(struct kgsl_drawobj *drawobj)
 	 * If we cancelled an event, there's a good chance that the context is
 	 * on a dispatcher queue, so schedule to get it removed.
 	 */
-	if (!bitmap_empty(&cmdbatch->pending, KGSL_MAX_SYNCPOINTS) &&
+	if (!bitmap_empty(&syncobj->pending, KGSL_MAX_SYNCPOINTS) &&
 		drawobj->device->ftbl->drawctxt_sched)
 		drawobj->device->ftbl->drawctxt_sched(drawobj->device,
 							drawobj->context);
@@ -341,8 +347,10 @@ static void drawobj_sync_fence_func(void *priv)
 
 	drawobj_sync_expire(event->device, event);
 
+#ifdef CONFIG_SYNC_DEBUG
 	trace_syncpoint_fence_expire(event->syncobj,
 		event->handle ? event->handle->name : "unknown");
+#endif
 
 	spin_lock_irqsave(&event->handle_lock, flags);
 
@@ -394,7 +402,9 @@ static int drawobj_add_sync_fence(struct kgsl_device *device,
 	spin_lock_init(&event->handle_lock);
 	set_bit(event->id, &syncobj->pending);
 
+#ifdef CONFIG_SYNC_DEBUG
 	trace_syncpoint_fence(syncobj, fence->name);
+#endif
 
 	spin_lock_irqsave(&event->handle_lock, flags);
 
@@ -410,6 +420,7 @@ static int drawobj_add_sync_fence(struct kgsl_device *device,
 		clear_bit(event->id, &syncobj->pending);
 
 		drawobj_put(drawobj);
+#ifdef CONFIG_SYNC_DEBUG
 		/*
 		 * Print a syncpoint_fence_expire trace if
 		 * the fence is already signaled or there is
@@ -417,6 +428,7 @@ static int drawobj_add_sync_fence(struct kgsl_device *device,
 		 */
 		trace_syncpoint_fence_expire(syncobj, (ret < 0) ?
 				"error" : fence->name);
+#endif
 	} else {
 		spin_unlock_irqrestore(&event->handle_lock, flags);
 	}
@@ -594,13 +606,28 @@ static void add_profiling_buffer(struct kgsl_device *device,
 		return;
 	}
 
-	cmdobj->profiling_buf_entry = entry;
+	if (!id) {
+		cmdobj->profiling_buffer_gpuaddr = gpuaddr;
+	} else {
+		u64 off =
+			offset + sizeof(struct kgsl_drawobj_profiling_buffer);
 
-	if (id != 0)
+		/*
+		 * Make sure there is enough room in the object to store the
+		 * entire profiling buffer object
+		 */
+		if (off < offset || off >= entry->memdesc.size) {
+			dev_err(device->dev,
+				"ignore invalid profile offset ctxt %d id %d offset %lld gpuaddr %llx size %lld\n",
+			drawobj->context->id, id, offset, gpuaddr, size);
+			kgsl_mem_entry_put(entry);
+			return;
+		}
+
 		cmdobj->profiling_buffer_gpuaddr =
 			entry->memdesc.gpuaddr + offset;
-	else
-		cmdobj->profiling_buffer_gpuaddr = gpuaddr;
+	}
+	cmdobj->profiling_buf_entry = entry;
 }
 
 /**
