@@ -120,7 +120,7 @@ enum msm_usb_phy_type {
 	QUSB_ULPI_PHY,
 };
 
-#define IDEV_CHG_MAX	1500
+#define IDEV_CHG_MAX	2400
 #define IUNIT		100
 #define IDEV_HVDCP_CHG_MAX	1800
 
@@ -523,7 +523,6 @@ struct msm_otg {
 #define PHY_REGULATORS_LPM	BIT(4)
 	int reset_counter;
 	struct power_supply usb_psy;
-	enum power_supply_type usb_supply_type;
 	unsigned int online;
 	unsigned int host_mode;
 	unsigned int voltage_max;

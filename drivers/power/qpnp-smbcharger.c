@@ -442,7 +442,7 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_main_chg_icl_percent = 60;
+static int smbchg_main_chg_icl_percent = 80;
 module_param_named(
 	main_chg_icl_percent, smbchg_main_chg_icl_percent,
 	int, S_IRUSR | S_IWUSR
@@ -467,7 +467,7 @@ module_param_named(
 #ifdef CONFIG_FORCE_FAST_CHARGE
 static int smbchg_default_dcp_icl_ma = 2500;
 #else
-static int smbchg_default_dcp_icl_ma = 1800;
+static int smbchg_default_dcp_icl_ma = 2200;
 #endif
 module_param_named(
 	default_dcp_icl_ma, smbchg_default_dcp_icl_ma,
@@ -1679,7 +1679,7 @@ static int smbchg_set_high_usb_chg_current(struct smbchg_chip *chip,
 			dev_err(chip->dev, "Couldn't set %dmA rc=%d\n",
 					CURRENT_150_MA, rc);
 		else
-			chip->usb_max_current_ma = 500;
+			chip->usb_max_current_ma = 800;
 		return rc;
 	}
 
@@ -1949,7 +1949,7 @@ static int smbchg_set_fastchg_current_raw(struct smbchg_chip *chip,
 			dev_err(chip->dev, "Couldn't set %dmA rc=%d\n",
 					CURRENT_500_MA, rc);
 		else
-			chip->fastchg_current_ma = 500;
+			chip->fastchg_current_ma = 800;
 		return rc;
 	}
 
@@ -2316,6 +2316,9 @@ static void smbchg_parallel_usb_enable(struct smbchg_chip *chip,
 		dev_err(chip->dev,
 			"Couldn't set Vflt on parallel psy rc: %d\n", rc);
 		return;
+	} else {
+		power_supply_set_voltage_limit(chip->usb_psy,
+				(chip->vfloat_mv + 50) * 1000);
 	}
 	power_supply_set_voltage_limit(chip->usb_psy,
 			(chip->vfloat_mv + 50) * 1000);
@@ -3184,7 +3187,7 @@ out:
 	return rc;
 }
 
-static int smbchg_ibat_ocp_threshold_ua = 4500000;
+static int smbchg_ibat_ocp_threshold_ua = 2800000;
 module_param(smbchg_ibat_ocp_threshold_ua, int, 0644);
 
 #define UCONV			1000000LL
@@ -3395,6 +3398,10 @@ static int smbchg_float_voltage_set(struct smbchg_chip *chip, int vfloat_mv)
 		chip->vfloat_mv = vfloat_mv;
 		power_supply_set_voltage_limit(chip->usb_psy,
 				chip->vfloat_mv * 1000);
+        
+	power_supply_set_voltage_limit(chip->usb_psy,
+				(chip->vfloat_mv * 1000));
+
 	}
 
 	return rc;
@@ -4702,7 +4709,7 @@ static int smbchg_set_optimal_charging_mode(struct smbchg_chip *chip, int type)
 }
 
 #define DEFAULT_SDP_MA		500
-#define DEFAULT_CDP_MA		1500
+#define DEFAULT_CDP_MA		2200
 static int smbchg_change_usb_supply_type(struct smbchg_chip *chip,
 						enum power_supply_type type)
 {
@@ -4746,12 +4753,8 @@ static int smbchg_change_usb_supply_type(struct smbchg_chip *chip,
 		goto out;
 	}
 
-	if (!chip->skip_usb_notification) {
-		propval.intval = type;
-		chip->usb_psy->set_property(chip->usb_psy,
-				POWER_SUPPLY_PROP_REAL_TYPE,
-				&propval);
-	}
+	if (!chip->skip_usb_notification)
+		power_supply_set_supply_type(chip->usb_psy, type);
 
 	/*
 	 * otherwise if it is unknown, remove vote
@@ -6156,7 +6159,7 @@ static void smbchg_external_power_changed(struct power_supply *psy)
 		current_limit = prop.intval / 1000;
 
 	rc = chip->usb_psy->get_property(chip->usb_psy,
-				POWER_SUPPLY_PROP_REAL_TYPE, &prop);
+				POWER_SUPPLY_PROP_TYPE, &prop);
 
 	read_usb_type(chip, &usb_type_name, &usb_supply_type);
 
@@ -7797,7 +7800,7 @@ static struct of_device_id smbchg_match_table[] = {
 };
 
 #define DC_MA_MIN 300
-#define DC_MA_MAX 2000
+#define DC_MA_MAX 2500
 #define OF_PROP_READ(chip, prop, dt_property, retval, optional)		\
 do {									\
 	if (retval)							\
@@ -7912,7 +7915,7 @@ err:
 }
 
 #define DEFAULT_VLED_MAX_UV		3500000
-#define DEFAULT_FCC_MA			2000
+#define DEFAULT_FCC_MA			2500
 static int smb_parse_dt(struct smbchg_chip *chip)
 {
 	int rc = 0, ocp_thresh = -EINVAL;
