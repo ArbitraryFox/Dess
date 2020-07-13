@@ -116,10 +116,10 @@ struct generic_get_data_ {
 };
 static struct generic_get_data_ *generic_get_data;
 
-#ifdef CONFIG_DEBUG_FS
 #define OUT_BUFFER_SIZE 56
 #define IN_BUFFER_SIZE 24
 
+#ifdef CONFIG_DEBUG_FS
 static struct timeval out_cold_tv;
 static struct timeval out_warm_tv;
 static struct timeval out_cont_tv;
@@ -133,6 +133,7 @@ static int in_cont_index;
 static int out_cold_index;
 static char *out_buffer;
 static char *in_buffer;
+#endif
 
 static inline uint32_t q6asm_get_pcm_format_id(uint32_t media_format_block_ver)
 {
@@ -153,6 +154,7 @@ static inline uint32_t q6asm_get_pcm_format_id(uint32_t media_format_block_ver)
 	return pcm_format_id;
 }
 
+#ifdef CONFIG_DEBUG_FS
 static int audio_output_latency_dbgfs_open(struct inode *inode,
 							struct file *file)
 {
