@@ -6653,6 +6653,7 @@ init_tracer_tracefs(struct trace_array *tr, struct dentry *d_tracer)
 
 }
 
+#ifdef CONFIG_DEBUG_FS
 static struct vfsmount *trace_automount(void *ingore)
 {
 	struct vfsmount *mnt;
@@ -6674,6 +6675,7 @@ static struct vfsmount *trace_automount(void *ingore)
 
 	return mnt;
 }
+#endif
 
 /**
  * tracing_init_dentry - initialize top level trace array
@@ -6699,6 +6701,7 @@ struct dentry *tracing_init_dentry(void)
 	 * the tracefs file system there, so older tools still
 	 * work with the newer kerenl.
 	 */
+#ifdef CONFIG_DEBUG_FS
 	tr->dir = debugfs_create_automount("tracing", NULL,
 					   trace_automount, NULL);
 	if (!tr->dir) {
@@ -6708,6 +6711,7 @@ struct dentry *tracing_init_dentry(void)
 
 	return NULL;
 }
+#endif
 
 static __init int tracer_init_tracefs(void)
 {
